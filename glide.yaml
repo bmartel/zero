@@ -1,0 +1,4 @@
+package: github.com/bmartel/zero
+import:
+- package: gopkg.in/go-playground/validator.v8
+- package: github.com/stretchr/testify

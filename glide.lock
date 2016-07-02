@@ -1,0 +1,8 @@
+hash: 6230be36850851d4ea993aff19c794f1571291c9fad8b39a6351b3ad9d97be29
+updated: 2016-07-02T13:37:23.283455418-05:00
+imports:
+- name: github.com/stretchr/testify
+  version: d77da356e56a7428ad25149ca77381849a6a5232
+- name: gopkg.in/go-playground/validator.v8
+  version: 25f1823069d853eccffbde025dca1812fa09c14b
+devImports: []
