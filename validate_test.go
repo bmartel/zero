@@ -14,9 +14,8 @@ type User struct {
 
 func (User) Validates() map[string]string {
 	return map[string]string{
-		"name.required": "name is required",
-		"name.min":      "name must be at least 3 characters",
-		"age.gte":       "age must be at least 18",
+		"name.min": "%s must be at least %s characters",
+		"age.gte":  "%s must be at least %s",
 	}
 }
 
