@@ -29,12 +29,17 @@ func (z *Zero) SetMessage(field string, message string) {
 	z.messages[field] = message
 }
 
-// Register custom validation funcs
-func (z *Zero) Register(validators map[string]ValidatorFunc) {
+// AddValidator adds a custom validation func
+func (z *Zero) AddValidator(name string, validatorFunc validator.Func, message string) {
+	z.validator.RegisterValidation(name, validatorFunc)
+	z.SetMessage(name, message)
+}
+
+// AddValidators adds a map of custom validation funcs
+func (z *Zero) AddValidators(validators map[string]ValidatorFunc) {
 	// Custom Validations
-	for field, validation := range validators {
-		z.validator.RegisterValidation(field, validation.Func)
-		z.SetMessage(field, validation.Message)
+	for name, validation := range validators {
+		z.AddValidator(name, validation.Func, validation.Message)
 	}
 }
 

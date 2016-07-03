@@ -1,12 +1,17 @@
 package zero_test
 
 import (
+	"reflect"
+	"regexp"
 	"testing"
+
+	"gopkg.in/go-playground/validator.v8"
 
 	"github.com/bmartel/zero"
 	"github.com/stretchr/testify/assert"
 )
 
+// === Example Structs ===
 type User struct {
 	Name string `valid:"required,min=3"`
 	Age  int    `valid:"gte=18"`
@@ -25,11 +30,37 @@ type Post struct {
 	Body  string `valid:"required,min=10,max=512"`
 }
 
+type Comment struct {
+	zero.Validation
+	ID   string `valid:"objectid"`
+	Body string `valid:"required,ascii"`
+}
+
+type HtmlComment struct {
+	zero.Validation
+	ID   string `valid:"objectid"`
+	Body string `valid:"required,html"`
+}
+
+// === Custom Validators ===
+var isObjectIDHex = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+var containsHTMLContent = regexp.MustCompile(`</?\w+((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)/?>`)
+
+func isObjectId(v *validator.Validate, topStruct reflect.Value, currentStruct reflect.Value, field reflect.Value, fieldtype reflect.Type, fieldKind reflect.Kind, param string) bool {
+	return isObjectIDHex.MatchString(field.String())
+}
+
+func containsHTML(v *validator.Validate, topStruct reflect.Value, currentStruct reflect.Value, field reflect.Value, fieldtype reflect.Type, fieldKind reflect.Kind, param string) bool {
+	return containsHTMLContent.MatchString(field.String())
+}
+
 func TestValidatorCreate(t *testing.T) {
 	v := zero.New("valid")
 
 	assert.IsType(t, &zero.Zero{}, v, "it should create a zero validation struct")
 }
+
+// === Tests ===
 
 func TestValidatorValidationFail(t *testing.T) {
 	user := User{
@@ -45,7 +76,7 @@ func TestValidatorValidationFail(t *testing.T) {
 	}
 
 	assert.False(t, isValid, "it should fail validation")
-	assert.Equal(t, msgs, expectedMsgs, "it should contain the custom error messages")
+	assert.Equal(t, expectedMsgs, msgs, "it should contain the custom error messages")
 }
 
 func TestValidatorValidationSuccess(t *testing.T) {
@@ -76,7 +107,7 @@ func TestValidationFailWithDefault(t *testing.T) {
 	msgs, isValid := v.Validate(post)
 
 	assert.False(t, isValid, "it should fail validation")
-	assert.Equal(t, msgs, expectedMsgs, "it should contain the custom error messages")
+	assert.Equal(t, expectedMsgs, msgs, "it should contain the custom error messages")
 }
 
 func TestValidationSuccessWithDefault(t *testing.T) {
@@ -90,4 +121,44 @@ func TestValidationSuccessWithDefault(t *testing.T) {
 
 	assert.Empty(t, msgs)
 	assert.True(t, isValid, "it should pass validation")
+}
+
+func TestAddingCustomValidator(t *testing.T) {
+	comment := Comment{
+		Body: "this is the body content",
+	}
+
+	expectedMsgs := map[string][]string{
+		"id": []string{"id must be a valid objectid"},
+	}
+
+	v := zero.New("valid")
+	v.AddValidator("objectid", isObjectId, "%s must be a valid objectid")
+
+	msgs, isValid := v.Validate(comment)
+
+	assert.False(t, isValid, "it should fail validation")
+	assert.Equal(t, expectedMsgs, msgs, "it should contain the custom error messages")
+}
+
+func TestAddingMultipleCustomValidators(t *testing.T) {
+	comment := HtmlComment{
+		Body: "this is the body content",
+	}
+
+	expectedMsgs := map[string][]string{
+		"id":   []string{"id must be a valid objectid"},
+		"body": []string{"body must contain valid html"},
+	}
+
+	v := zero.New("valid")
+	v.AddValidators(map[string]zero.ValidatorFunc{
+		"objectid": zero.ValidatorFunc{Message: "%s must be a valid objectid", Func: isObjectId},
+		"html":     zero.ValidatorFunc{Message: "%s must contain valid html", Func: containsHTML},
+	})
+
+	msgs, isValid := v.Validate(comment)
+
+	assert.False(t, isValid, "it should fail validation")
+	assert.Equal(t, expectedMsgs, msgs, "it should contain the custom error messages")
 }
