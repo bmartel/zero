@@ -95,3 +95,49 @@ func main() {
   }
 }
 ```
+
+Adding custom validators
+```go
+var isObjectIDHex = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+var containsHTMLContent = regexp.MustCompile(`</?\w+((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)/?>`)
+
+func isObjectId(v *validator.Validate, topStruct reflect.Value, currentStruct reflect.Value, field reflect.Value, fieldtype reflect.Type, fieldKind reflect.Kind, param string) bool {
+	return isObjectIDHex.MatchString(field.String())
+}
+
+func containsHTML(v *validator.Validate, topStruct reflect.Value, currentStruct reflect.Value, field reflect.Value, fieldtype reflect.Type, fieldKind reflect.Kind, param string) bool {
+	return containsHTMLContent.MatchString(field.String())
+}
+
+type Comment struct {
+  zero.Validation
+  ID   string `valid:"objectid"`
+  Body string `valid:"html"`
+}
+
+func main() {
+
+  comment := Comment{
+    Body:  "b",
+  }
+
+  v := zero.New("valid")
+
+  // Can add custom validators one at a time ...
+  v.AddValidator("objectid", isObjectId, "%s must be a valid objectid")
+  v.AddValidator("html", containsHTML, "%s must contain valid html")
+
+  // ... or all at once!
+  // v.AddValidators(map[string]zero.ValidatorFunc{
+  //   "objectid": zero.ValidatorFunc{Message: "%s must be a valid objectid", Func: isObjectId},
+  //   "html":     zero.ValidatorFunc{Message: "%s must contain valid html", Func: containsHTML},
+  // })
+
+  msgs, valid := v.Validate(comment)
+  if !valid {
+    // Will show the invalid messages registered for the html, and objectid validators
+    log.Printf("%+v", msgs)
+  }
+
+}
+```
