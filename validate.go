@@ -93,3 +93,11 @@ type ValidatorFunc struct {
 type Validator interface {
 	Validates() map[string]string
 }
+
+// Validation is a default struct for completing the validator interface
+type Validation struct{}
+
+// Validates ...
+func (Validation) Validates() map[string]string {
+	return map[string]string{}
+}

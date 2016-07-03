@@ -19,6 +19,12 @@ func (User) Validates() map[string]string {
 	}
 }
 
+type Post struct {
+	zero.Validation
+	Title string `valid:"required,min=3,max=64"`
+	Body  string `valid:"required,min=10,max=512"`
+}
+
 func TestValidatorCreate(t *testing.T) {
 	v := zero.New("valid")
 
@@ -50,6 +56,37 @@ func TestValidatorValidationSuccess(t *testing.T) {
 
 	v := zero.New("valid")
 	msgs, isValid := v.Validate(user)
+
+	assert.Empty(t, msgs)
+	assert.True(t, isValid, "it should pass validation")
+}
+
+func TestValidationFailWithDefault(t *testing.T) {
+	post := Post{
+		Title: "t",
+		Body:  "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+	}
+
+	expectedMsgs := map[string][]string{
+		"title": []string{"title must have minimum size 3"},
+		"body":  []string{"body must have maximum size 512"},
+	}
+
+	v := zero.New("valid")
+	msgs, isValid := v.Validate(post)
+
+	assert.False(t, isValid, "it should fail validation")
+	assert.Equal(t, msgs, expectedMsgs, "it should contain the custom error messages")
+}
+
+func TestValidationSuccessWithDefault(t *testing.T) {
+	post := Post{
+		Title: "test",
+		Body:  "this is the body content",
+	}
+
+	v := zero.New("valid")
+	msgs, isValid := v.Validate(post)
 
 	assert.Empty(t, msgs)
 	assert.True(t, isValid, "it should pass validation")
